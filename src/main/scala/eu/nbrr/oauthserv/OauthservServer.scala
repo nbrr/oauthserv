@@ -2,11 +2,13 @@ package eu.nbrr.oauthserv
 
 import cats.effect.{ConcurrentEffect, Timer}
 import cats.implicits._
+import eu.nbrr.oauthserv.impls.{AuthorizationsImpl, RegisteredClientsImpl, ResourceOwnersImpl, TokensImpl}
 import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
+
 import scala.concurrent.ExecutionContext.global
 
 object OauthservServer {
@@ -16,15 +18,16 @@ object OauthservServer {
       client <- BlazeClientBuilder[F](global).stream
       helloWorldAlg = HelloWorld.impl[F]
       jokeAlg = Jokes.impl[F](client)
+      authorizationsAlg = AuthorizationsImpl.impl
+      roAlg = ResourceOwnersImpl.impl
+      rcAlg = RegisteredClientsImpl.impl
+      tokensAlg = TokensImpl.impl
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
       // want to extract a segments not checked
       // in the underlying routes.
-      httpApp = (
-        OauthservRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        OauthservRoutes.jokeRoutes[F](jokeAlg)
-      ).orNotFound
+      httpApp = OauthservRoutes.authorizationsRoutes[F](authorizationsAlg, roAlg, rcAlg, tokensAlg).orNotFound
 
       // With Middlewares in place
       finalHttpApp = Logger.httpApp(true, true)(httpApp)
