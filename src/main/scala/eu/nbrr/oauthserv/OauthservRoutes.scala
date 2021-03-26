@@ -2,8 +2,9 @@ package eu.nbrr.oauthserv
 
 import cats.effect.Sync
 import cats.implicits._
+import eu.nbrr.oauthserv.grants.AuthorizationCodeGrant
 import eu.nbrr.oauthserv.traits.{Authorizations, RegisteredClients, ResourceOwners, Tokens}
-import eu.nbrr.oauthserv.types.TokenResponseDecoders._
+import eu.nbrr.oauthserv.types.TokenResponseEncoders._
 import eu.nbrr.oauthserv.types._
 import io.circe.syntax.EncoderOps
 import org.http4s.FormDataDecoder.{field, formEntityDecoder}
@@ -12,9 +13,12 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers._
 import org.http4s.{FormDataDecoder, _}
 
-import java.time.Instant
-
+// TODO put these somewhere it makes sense
 case class GrantType(value: String)
+
+case class AuthenticationForm(roId: RoId, clientId: ClientId, redirectionUri: Uri, state: AuthorizationState)
+
+case class TokenRequest(grantType: GrantType, code: AuthorizationCode, redirectUri: Uri, clientId: ClientId)
 
 object OauthservRoutes {
   def authorizationsRoutes[F[_] : Sync](A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): HttpRoutes[F] = {
@@ -43,14 +47,13 @@ object OauthservRoutes {
     object StateQueryParamMatcher extends QueryParamDecoderMatcher[AuthorizationState]("state")
     // TODO add scopes
 
-    case class AuthenticationForm(roId: RoId, clientId: ClientId, redirectionUri: Uri, state: AuthorizationState)
     implicit val authenticationMapper: FormDataDecoder[AuthenticationForm] =
       (field[RoId]("ro_id"),
         field[ClientId]("client_id"),
         field[Uri]("redirect_uri"),
         field[AuthorizationState]("state")).mapN(AuthenticationForm.apply)
 
-    case class TokenRequest(grantType: GrantType, code: AuthorizationCode, redirectUri: Uri, clientId: ClientId)
+
     implicit val tokenRequestMapper: FormDataDecoder[TokenRequest] =
       (field[GrantType]("grant_type"),
         field[AuthorizationCode]("code"),
@@ -105,34 +108,11 @@ object OauthservRoutes {
           // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?
           tokenRequest <- req.as[TokenRequest] // TODO invalid_request should occur is there is a failure here
           tokenResponse <-
-          if (tokenRequest.grantType.value == "authorization_code") {
-            RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
-              case None => BadRequest(TokenResponseError(InvalidClient(), Some(ErrorDescription("client not found")), None).asJson)
-              case Some(client) => {
-                A.findByCode(tokenRequest.code) match {
-                  case None => BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("authorization code doesn't match the authorization request")), None).asJson)
-                  case Some(authorization) =>
-                    if (authorization.clientId != client.id) {
-                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("client doesn't match the authorization request")), None).asJson)
-                    } else if (authorization.redirectionUri != tokenRequest.redirectUri) {
-                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("redirection uri doesn't match the authorization request")), None).asJson)
-                    } else if (authorization.date.plus(authorization.validity).isAfter(Instant.now)) {
-                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("authorization request has expired")), None).asJson)
-                    } else {
-                      val token = T.create(authorization.scopes, true) // FIXME mark authorization grant as used
-                      Ok(TokenResponseSuccess(
-                        accessToken = token.accessToken,
-                        //  tokenType = ,
-                        expiresIn = Some(token.validity),
-                        refreshToken = token.refreshToken,
-                        scope = Some(token.scope)).asJson)
-                    }
-                }
-              }
+            if (tokenRequest.grantType.value == "authorization_code") {
+              AuthorizationCodeGrant(tokenRequest)(A,RO,RC,T)
+            } else {
+              BadRequest(TokenResponseError(UnsupportedGrantType(), None, None).asJson)
             }
-          } else {
-            BadRequest(TokenResponseError(UnsupportedGrantType(), None, None).asJson)
-          }
         } yield tokenResponse
         // FIXME why slow to respond? esp on errors
       }

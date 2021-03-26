@@ -35,7 +35,7 @@ case class TokenResponseSuccess(accessToken: AccessToken,
                                 refreshToken: Option[RefreshToken],
                                 scope: Option[List[Scope]]) extends TokenResponse
 
-object TokenResponseDecoders {
+object TokenResponseEncoders {
   // FIXME omit None values
   implicit val encodeTokenResponse: Encoder[TokenResponse] = Encoder.instance {
     case trs@TokenResponseSuccess(_, _, _, _) => trs.asJson
