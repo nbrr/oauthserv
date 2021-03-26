@@ -3,8 +3,8 @@ package eu.nbrr.oauthserv
 import cats.effect.Sync
 import cats.implicits._
 import eu.nbrr.oauthserv.traits.{Authorizations, RegisteredClients, ResourceOwners, Tokens}
+import eu.nbrr.oauthserv.types.TokenResponseDecoders._
 import eu.nbrr.oauthserv.types._
-import io.circe.generic.auto._
 import io.circe.syntax.EncoderOps
 import org.http4s.FormDataDecoder.{field, formEntityDecoder}
 import org.http4s.circe.CirceEntityCodec._
@@ -12,64 +12,35 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers._
 import org.http4s.{FormDataDecoder, _}
 
-import java.util.UUID
+import java.time.Instant
 
 case class GrantType(value: String)
 
 object OauthservRoutes {
-
-  def jokeRoutes[F[_] : Sync](J: Jokes[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] {
-      case GET -> Root / "joke" =>
-        for {
-          joke <- J.get
-          resp <- Ok(joke)
-        } yield resp
-    }
-  }
-
-  def helloWorldRoutes[F[_] : Sync](H: HelloWorld[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] {
-      case GET -> Root / "hello" / name =>
-        for {
-          greeting <- H.hello(HelloWorld.Name(name))
-          resp <- Ok(greeting)
-        } yield resp
-    }
-  }
-
-
   def authorizationsRoutes[F[_] : Sync](A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): HttpRoutes[F] = {
     val _ = A
     val dsl = new Http4sDsl[F] {}
     import dsl._
+
+    // HELP this probably can be improved ?
     implicit val clientIdQueryParamDecoder: QueryParamDecoder[ClientId] =
-      QueryParamDecoder[String].map(s => ClientId(UUID.fromString(s)))
+      QueryParamDecoder[String].map(ClientId(_))
     implicit val authorizationStateQueryParamDecoder: QueryParamDecoder[AuthorizationState] =
       QueryParamDecoder[String].map(AuthorizationState)
     implicit val roIdQueryParamDecoder: QueryParamDecoder[RoId] =
-      QueryParamDecoder[String].map(s => RoId(UUID.fromString(s)))
+      QueryParamDecoder[String].map(RoId(_))
     implicit val authorizationCodeQueryParamDecoder: QueryParamDecoder[AuthorizationCode] =
-      QueryParamDecoder[String].map(s => AuthorizationCode(UUID.fromString(s)))
+      QueryParamDecoder[String].map(AuthorizationCode(_))
     implicit val grantTypeQueryParamDecoder: QueryParamDecoder[GrantType] =
-      QueryParamDecoder[String].map(s => GrantType(s))
-
+      QueryParamDecoder[String].map(GrantType)
 
     implicit val authorizationCodeQueryParamEncoder: QueryParamEncoder[AuthorizationCode] =
       QueryParamEncoder[String].contramap(c => c.value.toString)
-
 
     object ResponseTypeQueryParamMatcher extends QueryParamDecoderMatcher[String]("response_type")
     object ClientIdQueryParamMatcher extends QueryParamDecoderMatcher[ClientId]("client_id")
     object RedirectionUriQueryParamMatcher extends QueryParamDecoderMatcher[Uri]("redirect_uri")
     object StateQueryParamMatcher extends QueryParamDecoderMatcher[AuthorizationState]("state")
-
-    //object GrantTypeQueryParamMatcher extends QueryParamDecoderMatcher[String]("grant_type")
-    //object AuthorizationCodeQueryParamMatcher extends QueryParamDecoderMatcher[AuthorizationCode]("code")
     // TODO add scopes
 
     case class AuthenticationForm(roId: RoId, clientId: ClientId, redirectionUri: Uri, state: AuthorizationState)
@@ -85,7 +56,6 @@ object OauthservRoutes {
         field[AuthorizationCode]("code"),
         field[Uri]("redirect_uri"),
         field[ClientId]("client_id")).mapN(TokenRequest.apply)
-
 
     HttpRoutes.of[F] {
       case GET -> Root / "authorization"
@@ -129,32 +99,43 @@ object OauthservRoutes {
           .withQueryParam("state", authorization.state.value)))
       }
       case req@POST -> Root / "token" => {
-        // FIXME freshness check
+        // FIXME write this in a cleaner manner. Use Either ?
         for {
-          tokenRequest <- req.as[TokenRequest]
-          resp <- if (tokenRequest.grantType.value == "authorization_code") {
-            val t = for {
-              client <- RC.findById(tokenRequest.clientId)
-              authorization <- A.findByCode(tokenRequest.code)
-              if authorization.clientId == client.id && authorization.redirectionUri == tokenRequest.redirectUri
-              token = T.create(authorization.scopes, true)
-              tokenResponse = TokenResponse(
-                accessToken = token.accessToken,
-                //  tokenType = ,
-                expiresIn = Some(token.validity),
-                refreshToken = token.refreshToken,
-                scope = Some(token.scope))
-            } yield tokenResponse
-            t match {
-              case Some(token) => Ok(token.asJson)
-              case _ => BadRequest()
+          // FIXME invalid_scope error & scope check somewhere
+          // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?
+          tokenRequest <- req.as[TokenRequest] // TODO invalid_request should occur is there is a failure here
+          tokenResponse <-
+          if (tokenRequest.grantType.value == "authorization_code") {
+            RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
+              case None => BadRequest(TokenResponseError(InvalidClient(), Some(ErrorDescription("client not found")), None).asJson)
+              case Some(client) => {
+                A.findByCode(tokenRequest.code) match {
+                  case None => BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("authorization code doesn't match the authorization request")), None).asJson)
+                  case Some(authorization) =>
+                    if (authorization.clientId != client.id) {
+                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("client doesn't match the authorization request")), None).asJson)
+                    } else if (authorization.redirectionUri != tokenRequest.redirectUri) {
+                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("redirection uri doesn't match the authorization request")), None).asJson)
+                    } else if (authorization.date.plus(authorization.validity).isAfter(Instant.now)) {
+                      BadRequest(TokenResponseError(InvalidGrant(), Some(ErrorDescription("authorization request has expired")), None).asJson)
+                    } else {
+                      val token = T.create(authorization.scopes, true) // FIXME mark authorization grant as used
+                      Ok(TokenResponseSuccess(
+                        accessToken = token.accessToken,
+                        //  tokenType = ,
+                        expiresIn = Some(token.validity),
+                        refreshToken = token.refreshToken,
+                        scope = Some(token.scope)).asJson)
+                    }
+                }
+              }
             }
           } else {
-            BadRequest() // FIXME unsupported_grant_type error
+            BadRequest(TokenResponseError(UnsupportedGrantType(), None, None).asJson)
           }
-        } yield resp
+        } yield tokenResponse
+        // FIXME why slow to respond? esp on errors
       }
     }
   }
-
 }
