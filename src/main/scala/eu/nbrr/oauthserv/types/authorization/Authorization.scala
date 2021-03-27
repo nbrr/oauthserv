@@ -1,5 +1,6 @@
-package eu.nbrr.oauthserv.types
+package eu.nbrr.oauthserv.types.authorization
 
+import eu.nbrr.oauthserv.types.{ClientId, ResourceOwner, Scope}
 import org.http4s.Uri
 
 import java.time.{Duration, Instant}
@@ -10,8 +11,9 @@ case class AuthorizationCode(value: UUID) {
 }
 
 object AuthorizationCode {
-  def apply(s:String): AuthorizationCode = fromString(s)
-  def fromString(s:String)= AuthorizationCode(UUID.fromString(s))
+  def apply(s: String): AuthorizationCode = fromString(s)
+
+  def fromString(s: String) = AuthorizationCode(UUID.fromString(s))
 }
 
 case class AuthorizationState(value: String)
@@ -26,3 +28,4 @@ case class Authorization(
                           validity: Duration,
                           redeemed: Boolean,
                           resourceOwner: ResourceOwner)
+

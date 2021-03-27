@@ -1,7 +1,8 @@
 package eu.nbrr.oauthserv.impls
 
 import eu.nbrr.oauthserv.traits.Tokens
-import eu.nbrr.oauthserv.types.{AccessToken, RefreshToken, Scope, Token}
+import eu.nbrr.oauthserv.types.Scope
+import eu.nbrr.oauthserv.types.token.{AccessToken, RefreshToken, Token}
 
 import java.time.{Duration, Instant}
 import java.util.UUID

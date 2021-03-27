@@ -1,31 +1,12 @@
-package eu.nbrr.oauthserv.types
+package eu.nbrr.oauthserv.types.token
 
+import eu.nbrr.oauthserv.types.Scope
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import org.http4s.Uri
 
-import java.time.{Duration, Instant}
-import java.util.UUID
+import java.time.Duration
 
-case class AccessToken(value: UUID) {
-  override def toString: String = value.toString
-}
-
-case class RefreshToken(value: UUID) {
-  override def toString: String = value.toString
-}
-
-case class TokenType(value: String) {
-  override def toString: String = value
-}
-
-case class Token(
-                  accessToken: AccessToken,
-                  issueDate: Instant,
-                  validity: Duration,
-                  refreshToken: Option[RefreshToken],
-                  scope: List[Scope]
-                )
 
 sealed trait TokenResponse
 
@@ -75,16 +56,14 @@ final case class UnsupportedGrantType() extends TokenResponseErrorType {
   override def toString: String = "unsupported_grant"
 }
 
-final case class InvalidScope() extends TokenResponseErrorType
+final case class InvalidScope() extends TokenResponseErrorType {
+  override def toString: String = "invalid_scope"
+}
 
 case class TokenResponseError(error: TokenResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse
 
 case class ErrorDescription(value: String) {
   override def toString: String = value
-}
-
-object ErrorDescription {
-  def apply(s: String): ErrorDescription = ErrorDescription(s)
 }
 
 case class ErrorUri(value: Uri) {
@@ -94,4 +73,3 @@ case class ErrorUri(value: Uri) {
 object TokenErrorUri {
   def apply(uri: Uri): ErrorUri = ErrorUri(uri)
 }
-
