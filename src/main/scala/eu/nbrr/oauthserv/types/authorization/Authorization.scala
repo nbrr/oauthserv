@@ -16,7 +16,9 @@ object AuthorizationCode {
   def fromString(s: String) = AuthorizationCode(UUID.fromString(s))
 }
 
-case class AuthorizationState(value: String)
+case class AuthorizationState(value: String) {
+  override def toString: String = value
+}
 
 case class Authorization(
                           code: AuthorizationCode,

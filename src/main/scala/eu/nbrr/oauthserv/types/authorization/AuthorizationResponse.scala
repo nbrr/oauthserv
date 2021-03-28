@@ -1,33 +1,24 @@
 package eu.nbrr.oauthserv.types.authorization
 
-import io.circe.Encoder
-import io.circe.syntax.EncoderOps
-import org.http4s.Uri
+import org.http4s.Status.Found
+import org.http4s.headers.Location
+import org.http4s.{QueryParamEncoder, Response, Uri}
 
 // FIXME unnecessary refactor due to case class name conflict with TokenResponse for errors ?
 
-sealed trait AuthorizationResponse
 
-case class AuthorizationResponseSuccess(code: AuthorizationCode,
-                                        state: AuthorizationState) extends AuthorizationResponse
+object authorizationQueryParamEncoders {
+  implicit val authorizationStateQueryParamEncoder: QueryParamEncoder[AuthorizationState] =
+    QueryParamEncoder[String].contramap(_.toString)
 
-object AuthorizationResponseEncoders {
-  // FIXME omit None values
-  implicit val encodeTokenResponse: Encoder[AuthorizationResponse] = Encoder.instance {
-    case ars@AuthorizationResponseSuccess(_, _) => ars.asJson
-    case are@AuthorizationResponseError(_, _, _, _) => are.asJson
-  }
+  implicit val authorizationCodeQueryParamEncoder: QueryParamEncoder[AuthorizationCode] =
+    QueryParamEncoder[String].contramap(_.toString)
 
-  implicit val encodeTokenResponseSuccess: Encoder[AuthorizationResponseSuccess] =
-    Encoder.forProduct2("code", "state")(ars =>
-      (ars.code.toString, ars.state.toString)
-    )
-
-  implicit val encodeTokenResponseError: Encoder[AuthorizationResponseError] =
-    Encoder.forProduct4("error", "error_description", "error_uri", "state")(are =>
-      (are.error.toString, are.description.toString, are.uri.toString, are.state.toString)
-    )
+  implicit val AuthorizationResponseErrorTypeQueryParamEncoder: QueryParamEncoder[AuthorizationResponseErrorType] =
+    QueryParamEncoder[String].contramap(_.toString)
 }
+
+import eu.nbrr.oauthserv.types.authorization.authorizationQueryParamEncoders._
 
 sealed trait AuthorizationResponseErrorType
 
@@ -60,7 +51,25 @@ final case class TemporarilyUnavailable() extends AuthorizationResponseErrorType
   override def toString: String = "temporarily_unavailable"
 }
 
-case class AuthorizationResponseError(error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: AuthorizationState) extends AuthorizationResponse
+sealed trait AuthorizationResponse[F[_]] {
+  def response(): Response[F]
+}
+
+case class AuthorizationResponseSuccess[F[_]](authorization: Authorization) extends AuthorizationResponse[F] {
+  override def response(): Response[F] = Response[F](status = Found).withHeaders(Location(
+    authorization.redirectionUri
+      .withQueryParam("code", authorization.code)
+      .withQueryParam("state", authorization.state)))
+}
+
+case class AuthorizationResponseError[F[_]](redirectionUri: Uri, error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: AuthorizationState) extends AuthorizationResponse[F] {
+  override def response(): Response[F] = Response[F](status = Found).withHeaders(Location(
+    redirectionUri
+      .withQueryParam("error", error)
+      .withQueryParam("state", state)
+      .withQueryParam("error_description", description.toString) // FIXME deal with option
+      .withQueryParam("error_uri", uri.toString)))
+}
 
 case class ErrorDescription(value: String) {
   override def toString: String = value
@@ -69,3 +78,4 @@ case class ErrorDescription(value: String) {
 case class ErrorUri(value: Uri) {
   override def toString: String = value.toString
 }
+
