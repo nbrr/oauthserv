@@ -51,19 +51,19 @@ final case class TemporarilyUnavailable() extends AuthorizationResponseErrorType
   override def toString: String = "temporarily_unavailable"
 }
 
-sealed trait AuthorizationResponse[F[_]] {
-  def response(): Response[F]
+sealed trait AuthorizationResponse {
+  def response[F[_]](): Response[F]
 }
 
-case class AuthorizationResponseSuccess[F[_]](authorization: Authorization) extends AuthorizationResponse[F] {
-  override def response(): Response[F] = Response[F](status = Found).withHeaders(Location(
+case class AuthorizationResponseSuccess(authorization: Authorization) extends AuthorizationResponse {
+  override def response[F[_]](): Response[F] = Response[F](status = Found).withHeaders(Location(
     authorization.redirectionUri
       .withQueryParam("code", authorization.code)
       .withQueryParam("state", authorization.state)))
 }
 
-case class AuthorizationResponseError[F[_]](redirectionUri: Uri, error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: AuthorizationState) extends AuthorizationResponse[F] {
-  override def response(): Response[F] = Response[F](status = Found).withHeaders(Location(
+case class AuthorizationResponseError(redirectionUri: Uri, error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: AuthorizationState) extends AuthorizationResponse {
+  override def response[F[_]](): Response[F] = Response[F](status = Found).withHeaders(Location(
     redirectionUri
       .withQueryParam("error", error)
       .withQueryParam("state", state)

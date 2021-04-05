@@ -6,8 +6,6 @@ import eu.nbrr.oauthserv.grants.AuthorizationCodeGrant
 import eu.nbrr.oauthserv.traits.{Authorizations, RegisteredClients, ResourceOwners, Tokens}
 import eu.nbrr.oauthserv.types._
 import eu.nbrr.oauthserv.types.authorization._
-import eu.nbrr.oauthserv.types.token.TokenResponseEncoders._
-import io.circe.syntax.EncoderOps
 import org.http4s.FormDataDecoder.{field, formEntityDecoder}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
@@ -97,28 +95,29 @@ object OauthservRoutes {
           form <- req.as[AuthenticationForm]
           roAuthentication = RO.findAuthenticate(form.roId, form.roSecret)
           authenticationResult = roAuthentication match {
-            case None => AuthorizationResponseError[F](redirectionUri = form.redirectionUri, error = AccessDenied(),
+            case None => AuthorizationResponseError(redirectionUri = form.redirectionUri, error = AccessDenied(),
               description = None, uri = None, state = form.state)
             case Some(ro) => {
               val authorization = A.create(form.clientId, form.redirectionUri, List(), form.state, ro)
-              AuthorizationResponseSuccess[F](authorization)
+              AuthorizationResponseSuccess(authorization)
             }
           }
-        } yield authenticationResult.response()
+        } yield authenticationResult.response[F]()
       }
       case req@POST -> Root / "token" => {
         // FIXME write this in a cleaner manner. Use Either ?
+        // TODO rewrite this similar to authentication: a computation result type to be transformed into a response
         for {
           // FIXME invalid_scope error & scope check somewhere
           // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?
           tokenRequest <- req.as[TokenRequest] // TODO invalid_request should occur is there is a failure here
-          tokenResponse <-
-            if (tokenRequest.grantType.value == "authorization_code") {
-              AuthorizationCodeGrant[F](tokenRequest)(A, RO, RC, T)
-            } else {
-              BadRequest(token.TokenResponseError(token.UnsupportedGrantType(), None, None).asJson)
-            }
-        } yield tokenResponse
+          tokenResult =
+          if (tokenRequest.grantType.value == "authorization_code") {
+            AuthorizationCodeGrant(tokenRequest)(A, RO, RC, T)
+          } else {
+            token.TokenResponseError(token.UnsupportedGrantType(), None, None)
+          }
+        } yield tokenResult.response[F]()
         // HELP why slow to respond? esp on errors -> shouldn't infinite loop have been reported somehow?
       }
     }
