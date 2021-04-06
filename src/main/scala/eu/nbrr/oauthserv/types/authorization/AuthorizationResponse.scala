@@ -59,14 +59,14 @@ case class AuthorizationResponseSuccess(authorization: Authorization) extends Au
   override def response[F[_]](): Response[F] = Response[F](status = Found).withHeaders(Location(
     authorization.redirectionUri
       .withQueryParam("code", authorization.code)
-      .withQueryParam("state", authorization.state)))
+      .withOptionQueryParam("state", authorization.state)))
 }
 
-case class AuthorizationResponseError(redirectionUri: Uri, error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: AuthorizationState) extends AuthorizationResponse {
+case class AuthorizationResponseError(redirectionUri: Uri, error: AuthorizationResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri], state: Option[AuthorizationState]) extends AuthorizationResponse {
   override def response[F[_]](): Response[F] = Response[F](status = Found).withHeaders(Location(
     redirectionUri
       .withQueryParam("error", error)
-      .withQueryParam("state", state)
+      .withOptionQueryParam("state", state)
       .withQueryParam("error_description", description.toString) // FIXME deal with option
       .withQueryParam("error_uri", uri.toString)))
 }

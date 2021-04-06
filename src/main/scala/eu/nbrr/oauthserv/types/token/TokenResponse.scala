@@ -4,8 +4,8 @@ import eu.nbrr.oauthserv.types.token.TokenResponseEncoders._
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import org.http4s.Status.{BadRequest, Ok}
-import org.http4s.{Response, Uri}
 import org.http4s.circe.jsonEncoder
+import org.http4s.{Response, Uri}
 
 object TokenResponseEncoders {
   // FIXME omit None values

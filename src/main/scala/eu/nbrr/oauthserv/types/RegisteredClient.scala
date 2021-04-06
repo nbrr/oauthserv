@@ -26,9 +26,23 @@ case class Scope(value: String) {
   override def toString: String = value
 }
 
+object Scope {
+  def apply(s: String): Scope = Scope(s)
+}
+
+case class Scopes(value: List[Scope]) {
+  override def toString: String = value.mkString(" ")
+}
+
+object Scopes {
+  def apply(s: String): Scopes = fromString(s)
+
+  def fromString(s: String): Scopes = Scopes(s.split(" ").map(Scope(_)).toList)
+}
+
 case class RegisteredClient(
                              id: ClientId,
                              _type: ClientType,
                              secret: ClientSecret,
-                             scopes: List[Scope],
+                             scopes: Scopes,
                              redirectionUri: Uri)

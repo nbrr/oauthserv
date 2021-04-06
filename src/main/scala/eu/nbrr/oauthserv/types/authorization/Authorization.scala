@@ -1,6 +1,6 @@
 package eu.nbrr.oauthserv.types.authorization
 
-import eu.nbrr.oauthserv.types.{ClientId, ResourceOwner, Scope}
+import eu.nbrr.oauthserv.types.{ClientId, ResourceOwner, Scopes}
 import org.http4s.Uri
 
 import java.time.{Duration, Instant}
@@ -24,8 +24,8 @@ case class Authorization(
                           code: AuthorizationCode,
                           clientId: ClientId,
                           redirectionUri: Uri,
-                          scopes: List[Scope],
-                          state: AuthorizationState,
+                          scopes: Option[Scopes],
+                          state: Option[AuthorizationState],
                           date: Instant,
                           validity: Duration,
                           redeemed: Boolean,

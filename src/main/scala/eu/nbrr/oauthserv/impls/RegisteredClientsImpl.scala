@@ -14,7 +14,7 @@ object RegisteredClientsImpl {
         id = ClientId(UUID.fromString("123e4567-e89b-12d3-a456-556642440000")),
         _type = ConfidentialClient(),
         secret = ClientSecret("client123"),
-        scopes = List(Scope("foo"), Scope("bar")),
+        scopes = Scopes.fromString("ceci cela"),
         redirectionUri = uri"https://example.com"
       )
     )

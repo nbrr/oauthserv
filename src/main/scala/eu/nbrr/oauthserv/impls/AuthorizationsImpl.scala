@@ -13,7 +13,7 @@ object AuthorizationsImpl {
   def impl: Authorizations = new Authorizations {
     val authorizations: Set[Authorization] = Set()
 
-    def create(clientId: ClientId, redirectionUri: Uri, scopes: List[Scope], state: AuthorizationState, resourceOwner: ResourceOwner): Authorization = {
+    def create(clientId: ClientId, redirectionUri: Uri, scopes: Option[Scopes], state: Option[AuthorizationState], resourceOwner: ResourceOwner): Authorization = {
       val newAuthorization = authorization.Authorization(
         code = AuthorizationCode(UUID.randomUUID()),
         clientId = clientId,

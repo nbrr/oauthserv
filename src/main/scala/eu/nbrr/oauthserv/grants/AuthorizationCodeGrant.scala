@@ -9,8 +9,6 @@ import java.time.Instant
 
 
 object AuthorizationCodeGrant {
-
-
   def apply(tokenRequest: TokenRequest)(A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): TokenResponse = {
     val _ = RO
     RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
