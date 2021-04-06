@@ -26,10 +26,6 @@ case class Scope(value: String) {
   override def toString: String = value
 }
 
-object Scope {
-  def apply(s: String): Scope = Scope(s)
-}
-
 case class Scopes(value: List[Scope]) {
   override def toString: String = value.mkString(" ")
 }
