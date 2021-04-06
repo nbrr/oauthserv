@@ -37,7 +37,7 @@ object AuthenticationForm {
   }
 }
 
-case class TokenRequest(grantType: GrantType, code: AuthorizationCode, redirectUri: Uri, clientId: ClientId)
+case class TokenRequest(grantType: GrantType, code: AuthorizationCode, redirectUri: Uri, clientId: ClientId, clientSecret: ClientSecret)
 
 // FIXME force https
 object OauthservRoutes {
@@ -49,6 +49,8 @@ object OauthservRoutes {
     // HELP this probably can be improved ?
     implicit val clientIdQueryParamDecoder: QueryParamDecoder[ClientId] =
       QueryParamDecoder[String].map(ClientId(_))
+    implicit val clientSecretQueryParamDecoder: QueryParamDecoder[ClientSecret] =
+      QueryParamDecoder[String].map(ClientSecret)
     implicit val authorizationStateQueryParamDecoder: QueryParamDecoder[AuthorizationState] =
       QueryParamDecoder[String].map(AuthorizationState)
     implicit val ScopeTypeQueryParameterDecoder: QueryParamDecoder[Scopes] =
@@ -81,7 +83,8 @@ object OauthservRoutes {
       (field[GrantType]("grant_type"),
         field[AuthorizationCode]("code"),
         field[Uri]("redirect_uri"),
-        field[ClientId]("client_id")).mapN(TokenRequest.apply)
+        field[ClientId]("client_id"),
+        field[ClientSecret]("client_secret")).mapN(TokenRequest.apply)
 
     HttpRoutes.of[F] {
       case GET -> Root / "authorization"
@@ -116,7 +119,9 @@ object OauthservRoutes {
       }
       case req@POST -> Root / "token" => {
         // FIXME write this in a cleaner manner. Use Either ?
-        // TODO rewrite this similar to authentication: a computation result type to be transformed into a response
+        // TODO proper client authentication
+        // TOOO some extent of brute-force protection
+        // TODO http basic authentication scheme
         for {
           // FIXME invalid_scope error & scope check somewhere
           // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?

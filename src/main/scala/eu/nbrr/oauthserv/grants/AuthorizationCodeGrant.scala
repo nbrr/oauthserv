@@ -14,19 +14,23 @@ object AuthorizationCodeGrant {
     RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
       case None => TokenResponseError(token.InvalidClient(), Some(token.ErrorDescription("client not found")), None)
       case Some(client) => {
-        A.findByCode(tokenRequest.code) match {
-          case None => TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization code doesn't match the authorization request")), None)
-          case Some(authorization) =>
-            if (authorization.clientId != client.id) {
-              TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("client doesn't match the authorization request")), None)
-            } else if (authorization.redirectionUri != tokenRequest.redirectUri) {
-              TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("redirection uri doesn't match the authorization request")), None)
-            } else if (authorization.date.plus(authorization.validity).isBefore(Instant.now)) {
-              TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization request has expired")), None)
-            } else {
-              val token = T.create(authorization.scopes, true) // FIXME mark authorization grant as used
-              TokenResponseSuccess(token)
-            }
+        if (client.secret == tokenRequest.clientSecret ){
+          A.findByCode(tokenRequest.code) match {
+            case None => TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization code doesn't match the authorization request")), None)
+            case Some(authorization) =>
+              if (authorization.clientId != client.id) {
+                TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("client doesn't match the authorization request")), None)
+              } else if (authorization.redirectionUri != tokenRequest.redirectUri) {
+                TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("redirection uri doesn't match the authorization request")), None)
+              } else if (authorization.date.plus(authorization.validity).isBefore(Instant.now)) {
+                TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization request has expired")), None)
+              } else {
+                val token = T.create(authorization.scopes, true) // FIXME mark authorization grant as used
+                TokenResponseSuccess(token)
+              }
+          }
+        } else {
+          TokenResponseError(token.InvalidClient(), Some(token.ErrorDescription("authentication failed")), None) // TODO 401
         }
       }
     }
