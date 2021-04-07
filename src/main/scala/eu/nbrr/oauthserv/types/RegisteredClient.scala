@@ -22,23 +22,25 @@ final case class ConfidentialClient() extends ClientType
 
 case class ClientSecret(value: String)
 
-case class Scope(value: String) {
-  override def toString: String = value
-}
-
-case class Scopes(value: List[Scope]) {
+case class Scope(value: Set[String]) {
   override def toString: String = value.mkString(" ")
+
+  def get(): Set[String] = value
+
+  def contains(scopeElt: String): Boolean = value.contains(scopeElt)
+
+  def contains(scope: Scope): Boolean = scope.get().subsetOf(value)
 }
 
-object Scopes {
-  def apply(s: String): Scopes = fromString(s)
+object Scope {
+  def apply(s: String): Scope = fromString(s)
 
-  def fromString(s: String): Scopes = Scopes(s.split(" ").map(Scope(_)).toList)
+  def fromString(s: String): Scope = Scope(s.split(" ").toSet)
 }
 
 case class RegisteredClient(
                              id: ClientId,
                              _type: ClientType,
                              secret: ClientSecret,
-                             scopes: Scopes,
+                             scope: Scope,
                              redirectionUri: Uri)

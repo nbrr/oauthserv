@@ -14,7 +14,7 @@ object AuthorizationCodeGrant {
     RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
       case None => TokenResponseError(token.InvalidClient(), Some(token.ErrorDescription("client not found")), None)
       case Some(client) => {
-        if (client.secret == tokenRequest.clientSecret ){
+        if (client.secret == tokenRequest.clientSecret) {
           A.findByCode(tokenRequest.code) match {
             case None => TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization code doesn't match the authorization request")), None)
             case Some(authorization) =>
@@ -25,7 +25,7 @@ object AuthorizationCodeGrant {
               } else if (authorization.date.plus(authorization.validity).isBefore(Instant.now)) {
                 TokenResponseError(token.InvalidGrant(), Some(token.ErrorDescription("authorization request has expired")), None)
               } else {
-                val token = T.create(authorization.scopes, true) // FIXME mark authorization grant as used
+                val token = T.create(authorization.scope, true) // FIXME mark authorization grant as used
                 TokenResponseSuccess(token)
               }
           }

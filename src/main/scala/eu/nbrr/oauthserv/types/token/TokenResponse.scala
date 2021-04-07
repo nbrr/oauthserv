@@ -35,29 +35,29 @@ object TokenResponseEncoders {
 }
 
 
-sealed trait TokenResponseErrorType
+sealed trait TokenErrorType
 
-final case class InvalidRequest() extends TokenResponseErrorType {
+final case class InvalidRequest() extends TokenErrorType {
   override def toString: String = "invalid_request"
 }
 
-final case class InvalidClient() extends TokenResponseErrorType {
+final case class InvalidClient() extends TokenErrorType {
   override def toString: String = "invalid_client"
 }
 
-final case class InvalidGrant() extends TokenResponseErrorType {
+final case class InvalidGrant() extends TokenErrorType {
   override def toString: String = "invalid_grant"
 }
 
-final case class UnauthorizedClient() extends TokenResponseErrorType {
+final case class UnauthorizedClient() extends TokenErrorType {
   override def toString: String = "unauthorized_client"
 }
 
-final case class UnsupportedGrantType() extends TokenResponseErrorType {
+final case class UnsupportedGrantType() extends TokenErrorType {
   override def toString: String = "unsupported_grant"
 }
 
-final case class InvalidScope() extends TokenResponseErrorType {
+final case class InvalidScope() extends TokenErrorType {
   override def toString: String = "invalid_scope"
 }
 
@@ -69,7 +69,7 @@ case class TokenResponseSuccess(token: Token) extends TokenResponse {
   override def response[F[_]](): Response[F] = Response[F](status = Ok).withEntity((this: TokenResponse).asJson)
 }
 
-case class TokenResponseError(error: TokenResponseErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse {
+case class TokenResponseError(error: TokenErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse {
   override def response[F[_]](): Response[F] = Response[F](status = BadRequest).withEntity((this: TokenResponse).asJson)
 }
 

@@ -1,6 +1,6 @@
 package eu.nbrr.oauthserv.types.token
 
-import eu.nbrr.oauthserv.types.Scopes
+import eu.nbrr.oauthserv.types.Scope
 
 import java.time.{Duration, Instant}
 import java.util.UUID
@@ -22,5 +22,5 @@ case class Token(
                   issueDate: Instant,
                   validity: Duration,
                   refreshToken: Option[RefreshToken],
-                  scope: Option[Scopes]
+                  scope: Option[Scope]
                 )
