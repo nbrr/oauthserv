@@ -1,13 +1,15 @@
 package eu.nbrr.oauthserv.traits
 
 import eu.nbrr.oauthserv.types._
-import eu.nbrr.oauthserv.types.authorization.{Authorization, AuthorizationCode, AuthorizationState}
+import eu.nbrr.oauthserv.types.authorization.Authorization
 import org.http4s.Uri
 
 trait Authorizations {
-  def create(clientId: ClientId, redirectionUri: Uri, scope: Option[Scope], state: Option[AuthorizationState], resourceOwner: ResourceOwner): Authorization
+  def create(clientId: client.Id,
+             redirectionUri: Uri,
+             scope: Option[client.Scope],
+             state: Option[authorization.State],
+             resourceOwner: ResourceOwner): Authorization
 
-  def findByCode(code: AuthorizationCode): Option[Authorization]
+  def findByCode(code: authorization.Code): Option[Authorization]
 }
-
-

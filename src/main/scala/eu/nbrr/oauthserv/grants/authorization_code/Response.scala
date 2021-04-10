@@ -1,4 +1,4 @@
-package eu.nbrr.oauthserv.grants
+package eu.nbrr.oauthserv.grants.authorization_code
 
 import eu.nbrr.oauthserv.TokenRequest
 import eu.nbrr.oauthserv.traits.{Authorizations, RegisteredClients, ResourceOwners, Tokens}
@@ -7,14 +7,13 @@ import eu.nbrr.oauthserv.types.endpoints.token._
 
 import java.time.Instant
 
-
-object AuthorizationCodeGrant {
-  def apply(tokenRequest: TokenRequest)(A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): TokenResponse = {
+object Response {
+  def apply(tokenRequest: TokenRequest)(implicit A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): TokenResponse = {
     val _ = RO
-    RC.findById(tokenRequest.clientId) match { // TODO client authentication for client
+    RC.findById(tokenRequest.clientId) match {
       case None => TokenResponseError(InvalidClient(), Some(ErrorDescription("client not found")), None)
       case Some(client) => {
-        if (client.secret == tokenRequest.clientSecret) {
+        if (client.secret == tokenRequest.clientSecret) { // TODO client authentication
           A.findByCode(tokenRequest.code) match {
             case None => TokenResponseError(InvalidGrant(), Some(endpoints.token.ErrorDescription("authorization code doesn't match the authorization request")), None)
             case Some(authorization) =>

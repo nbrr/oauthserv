@@ -1,26 +1,14 @@
 package eu.nbrr.oauthserv.types.token
 
-import eu.nbrr.oauthserv.types.Scope
+import eu.nbrr.oauthserv.types.{client, token}
 
 import java.time.{Duration, Instant}
-import java.util.UUID
-
-case class AccessToken(value: UUID) {
-  override def toString: String = value.toString
-}
-
-case class RefreshToken(value: UUID) {
-  override def toString: String = value.toString
-}
-
-case class TokenType(value: String) {
-  override def toString: String = value
-}
 
 case class Token(
-                  accessToken: AccessToken,
+                  accessToken: token.AccessToken,
+                  tokenType: String, // FIXME: type this
                   issueDate: Instant,
                   validity: Duration,
-                  refreshToken: Option[RefreshToken],
-                  scope: Option[Scope]
+                  refreshToken: Option[token.RefreshToken],
+                  scope: Option[client.Scope]
                 )

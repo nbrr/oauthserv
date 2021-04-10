@@ -1,7 +1,7 @@
 package eu.nbrr.oauthserv.traits
 
-import eu.nbrr.oauthserv.types.{ClientId, RegisteredClient}
+import eu.nbrr.oauthserv.types._
 
 trait RegisteredClients {
-  def findById(id: ClientId): Option[RegisteredClient]
+  def findById(id: client.Id): Option[RegisteredClient]
 }

@@ -1,6 +1,7 @@
-package eu.nbrr.oauthserv.types.token
+package eu.nbrr.oauthserv.types.endpoints.token
 
-import eu.nbrr.oauthserv.types.token.TokenResponseEncoders._
+import eu.nbrr.oauthserv.types.endpoints.token.TokenResponseEncoders._
+import eu.nbrr.oauthserv.types.token.Token
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import org.http4s.Status.{BadRequest, Ok}
@@ -34,33 +35,6 @@ object TokenResponseEncoders {
     )
 }
 
-
-sealed trait TokenErrorType
-
-final case class InvalidRequest() extends TokenErrorType {
-  override def toString: String = "invalid_request"
-}
-
-final case class InvalidClient() extends TokenErrorType {
-  override def toString: String = "invalid_client"
-}
-
-final case class InvalidGrant() extends TokenErrorType {
-  override def toString: String = "invalid_grant"
-}
-
-final case class UnauthorizedClient() extends TokenErrorType {
-  override def toString: String = "unauthorized_client"
-}
-
-final case class UnsupportedGrantType() extends TokenErrorType {
-  override def toString: String = "unsupported_grant"
-}
-
-final case class InvalidScope() extends TokenErrorType {
-  override def toString: String = "invalid_scope"
-}
-
 sealed trait TokenResponse {
   def response[F[_]](): Response[F]
 }
@@ -69,7 +43,7 @@ case class TokenResponseSuccess(token: Token) extends TokenResponse {
   override def response[F[_]](): Response[F] = Response[F](status = Ok).withEntity((this: TokenResponse).asJson)
 }
 
-case class TokenResponseError(error: TokenErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse {
+case class TokenResponseError(error: ErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse {
   override def response[F[_]](): Response[F] = Response[F](status = BadRequest).withEntity((this: TokenResponse).asJson)
 }
 

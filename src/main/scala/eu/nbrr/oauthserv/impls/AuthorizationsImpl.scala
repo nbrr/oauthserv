@@ -1,7 +1,7 @@
 package eu.nbrr.oauthserv.impls
 
 import eu.nbrr.oauthserv.traits.Authorizations
-import eu.nbrr.oauthserv.types.authorization.{Authorization, AuthorizationCode, AuthorizationState}
+import eu.nbrr.oauthserv.types.authorization.Authorization
 import eu.nbrr.oauthserv.types.{authorization, _}
 import org.http4s.Uri
 
@@ -13,9 +13,13 @@ object AuthorizationsImpl {
   def impl: Authorizations = new Authorizations {
     val authorizations: Set[Authorization] = Set()
 
-    def create(clientId: ClientId, redirectionUri: Uri, scope: Option[Scope], state: Option[AuthorizationState], resourceOwner: ResourceOwner): Authorization = {
+    def create(clientId: client.Id,
+               redirectionUri: Uri,
+               scope: Option[client.Scope],
+               state: Option[authorization.State],
+               resourceOwner: ResourceOwner): Authorization = {
       val newAuthorization = authorization.Authorization(
-        code = AuthorizationCode(UUID.randomUUID()),
+        code = authorization.Code(UUID.randomUUID()),
         clientId = clientId,
         redirectionUri = redirectionUri,
         scope = scope,
@@ -29,6 +33,6 @@ object AuthorizationsImpl {
       newAuthorization
     }
 
-    def findByCode(code: AuthorizationCode): Option[Authorization] = authorizations.find(a => a.code == code)
+    def findByCode(code: authorization.Code): Option[Authorization] = authorizations.find(a => a.code == code)
   }
 }

@@ -1,7 +1,7 @@
 package eu.nbrr.oauthserv.impls
 
 import eu.nbrr.oauthserv.traits.Tokens
-import eu.nbrr.oauthserv.types.Scope
+import eu.nbrr.oauthserv.types._
 import eu.nbrr.oauthserv.types.token.{AccessToken, RefreshToken, Token}
 
 import java.time.{Duration, Instant}
@@ -13,8 +13,8 @@ object TokensImpl {
   def impl: Tokens = new Tokens {
     val tokens: Set[Token] = Set()
 
-    def create(scope: Option[Scope], refresh: Boolean): Token = {
-      val token = Token(
+    def create(scope: Option[client.Scope], refresh: Boolean): Token = {
+      val token = TokenData(
         accessToken = AccessToken(UUID.randomUUID),
         issueDate = Instant.now,
         validity = Duration.ofSeconds(3600),
