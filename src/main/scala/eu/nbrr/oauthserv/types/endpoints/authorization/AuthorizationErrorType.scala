@@ -42,3 +42,21 @@ case class ErrorDescription(value: String) {
 case class ErrorUri(value: Uri) {
   override def toString: String = value.toString
 }
+
+AUTHORIZATION CODE
+invalid_request
+unauthorized_client
+access_denied
+unsupported_response_type
+invalid_scope
+server_error
+temporarily_unavailable
+
+IMPLICIT
+invalid_request
+unauthorized_client
+access_denied
+unsupported_response_type
+invalid_scope
+server_error
+temporarily_unavailable

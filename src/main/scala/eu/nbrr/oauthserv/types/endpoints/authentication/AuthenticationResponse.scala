@@ -63,12 +63,12 @@ case class AuthenticationResponseError(redirectionUri: Uri,
         .withOptionQueryParam("state", state)))
 }
 
-case class RedirectionUriResponseError(faultyRedirectionUri: Uri) extends AuthenticationResponse {
+case class AuthenticationRedirectionUriResponseError(faultyRedirectionUri: Uri) extends AuthenticationResponse {
   override def response[F[_]](): Response[F] = Response(status = BadRequest)
   // TODO explain in response that the redirection URI is not correct
 }
 
-case class ResponseTypeResponseError(responseType: String) extends AuthenticationResponse {
+case class AuthenticationResponseTypeResponseError(responseType: String) extends AuthenticationResponse {
   override def response[F[_]](): Response[F] = Response(status = BadRequest)
   // TODO explain in response that the response type is not correct
 }
