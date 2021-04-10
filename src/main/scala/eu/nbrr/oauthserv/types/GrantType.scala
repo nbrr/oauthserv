@@ -19,3 +19,16 @@ case class ClientCredentials() extends GrantType {
   val grantType: String = "client_credentials"
 }
 // TODO extensions
+
+case class Unsupported() extends GrantType
+// FIXME figure out how to pass a parse error in the parameters instead of using this
+
+object GrantType {
+  def fromString(s: String): GrantType = s match {
+    case "authorization_code" => AuthorizationCode()
+    case "token" => Implicit()
+    case "password" => ResourceOwnerPasswordCredentials()
+    case "client_credentials" => ClientCredentials()
+    case _ => Unsupported()
+  }
+}

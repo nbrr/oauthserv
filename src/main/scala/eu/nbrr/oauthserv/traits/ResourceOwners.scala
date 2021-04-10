@@ -1,6 +1,6 @@
 package eu.nbrr.oauthserv.traits
 
-import eu.nbrr.oauthserv.types.{ResourceOwner, RoId, RoSecret}
+import eu.nbrr.oauthserv.types.resource_owner.{ResourceOwner, RoId, RoSecret}
 
 trait ResourceOwners {
   def getAll(): List[ResourceOwner]

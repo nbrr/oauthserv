@@ -1,6 +1,6 @@
 package eu.nbrr.oauthserv.types.endpoints.authentication
 
-import eu.nbrr.oauthserv.ParamEncoders._
+import eu.nbrr.oauthserv.coders.ParamEncoders._
 import eu.nbrr.oauthserv.types._
 import eu.nbrr.oauthserv.types.authorization.Authorization
 import eu.nbrr.oauthserv.types.token.Token
@@ -19,7 +19,7 @@ case class AuthorizationCodeGrantResponseSuccess(authorization: Authorization)
     Response(status = Found).withHeaders(Location(
       authorization.redirectionUri
         .withQueryParam("code", authorization.code)
-        .withOptionQueryParam("state", authorization.state)
+        .withOptionQueryParam("state", authorization.state)))
 }
 
 // TODO:

@@ -14,8 +14,9 @@ object TokensImpl {
     val tokens: Set[Token] = Set()
 
     def create(scope: Option[client.Scope], refresh: Boolean): Token = {
-      val token = TokenData(
+      val token = Token(
         accessToken = AccessToken(UUID.randomUUID),
+        tokenType = "", // FIXME unimplemented
         issueDate = Instant.now,
         validity = Duration.ofSeconds(3600),
         refreshToken = when(refresh)(RefreshToken(UUID.randomUUID)),

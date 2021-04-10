@@ -5,7 +5,8 @@ import eu.nbrr.oauthserv.types.authorization.State
 import eu.nbrr.oauthserv.types.client.{Id, Scope}
 import org.http4s.Status.{BadRequest, Ok}
 import org.http4s.headers.`Content-Type`
-import org.http4s.{MediaType, QueryParamEncoder, Response, Uri}
+import org.http4s.{MediaType, Response, Uri}
+
 
 sealed trait AuthorizationResponse {
   def response[F[_]](): Response[F]
@@ -61,16 +62,6 @@ case class AuthorizationResponseTypeResponseError(responseType: String) extends 
   // TODO explain in response that the redirection URI is not correct
 }
 
-object authorizationQueryParamEncoders {
-  implicit val authorizationStateQueryParamEncoder: QueryParamEncoder[State] =
-    QueryParamEncoder[String].contramap(_.toString)
-
-  implicit val authorizationCodeQueryParamEncoder: QueryParamEncoder[authorization.Code] =
-    QueryParamEncoder[String].contramap(_.toString)
-
-  implicit val AuthorizationResponseErrorTypeQueryParamEncoder: QueryParamEncoder[ErrorType] =
-    QueryParamEncoder[String].contramap(_.toString)
-}
 
 object htmlForm {
   def apply(responseType: String,

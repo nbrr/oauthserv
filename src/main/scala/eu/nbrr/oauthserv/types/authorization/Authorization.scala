@@ -1,6 +1,7 @@
 package eu.nbrr.oauthserv.types.authorization
 
-import eu.nbrr.oauthserv.types.{ResourceOwner, authorization, client}
+import eu.nbrr.oauthserv.types.resource_owner.ResourceOwner
+import eu.nbrr.oauthserv.types.{authorization, client}
 import org.http4s.Uri
 
 import java.time.{Duration, Instant}

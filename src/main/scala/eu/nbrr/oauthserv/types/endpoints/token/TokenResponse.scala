@@ -1,60 +1,24 @@
 package eu.nbrr.oauthserv.types.endpoints.token
 
-import eu.nbrr.oauthserv.types.endpoints.token.TokenResponseEncoders._
+import eu.nbrr.oauthserv.coders.ParamEncoders._
 import eu.nbrr.oauthserv.types.token.Token
-import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import org.http4s.Status.{BadRequest, Ok}
 import org.http4s.circe.jsonEncoder
 import org.http4s.{Response, Uri}
 
-object TokenResponseEncoders {
-  // FIXME omit None values
-  implicit val encodeTokenResponse: Encoder[TokenResponse] = Encoder.instance {
-    case trs@TokenResponseSuccess(_) => trs.asJson
-    case tre@TokenResponseError(_, _, _) => tre.asJson
-  }
-
-  implicit val encodeTokenResponseSuccess: Encoder[TokenResponseSuccess] =
-    Encoder.forProduct4(
-      "access_token",
-      /*"token_type",*/
-      "expires_in",
-      "refresh_token",
-      "scope")(trs =>
-      (trs.token.accessToken.toString,
-        /*,*/
-        trs.token.validity.toString, // FIXME should be optional
-        trs.token.refreshToken.map(_.toString),
-        trs.token.scope.mkString(",") // FIXME should be optional
-      )) // FIXME time string format
-
-  implicit val encodeTokenResponseError: Encoder[TokenResponseError] =
-    Encoder.forProduct3("error", "error_description", "error_uri")(tre =>
-      (tre.error.toString, tre.description.toString, tre.uri.toString)
-    )
-}
-
 sealed trait TokenResponse {
   def response[F[_]](): Response[F]
 }
 
-case class TokenResponseSuccess(token: Token) extends TokenResponse {
-  override def response[F[_]](): Response[F] = Response[F](status = Ok).withEntity((this: TokenResponse).asJson)
+case class AuthorizationCodeGrantResponseSuccess(token: Token) extends TokenResponse {
+  override def response[F[_]](): Response[F] =
+    Response[F](status = Ok)
+      .withEntity((this: TokenResponse).asJson)
 }
 
-case class TokenResponseError(error: ErrorType, description: Option[ErrorDescription], uri: Option[ErrorUri]) extends TokenResponse {
-  override def response[F[_]](): Response[F] = Response[F](status = BadRequest).withEntity((this: TokenResponse).asJson)
-}
-
-case class ErrorDescription(value: String) {
-  override def toString: String = value
-}
-
-case class ErrorUri(value: Uri) {
-  override def toString: String = value.toString
-}
-
-object TokenErrorUri {
-  def apply(uri: Uri): ErrorUri = ErrorUri(uri)
+case class TokenResponseError(error: TokenErrorType, description: Option[String], uri: Option[Uri]) extends TokenResponse {
+  override def response[F[_]](): Response[F] =
+    Response[F](status = BadRequest)
+      .withEntity((this: TokenResponse).asJson)
 }

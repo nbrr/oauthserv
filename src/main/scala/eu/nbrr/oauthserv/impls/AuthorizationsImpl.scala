@@ -2,6 +2,7 @@ package eu.nbrr.oauthserv.impls
 
 import eu.nbrr.oauthserv.traits.Authorizations
 import eu.nbrr.oauthserv.types.authorization.Authorization
+import eu.nbrr.oauthserv.types.resource_owner.ResourceOwner
 import eu.nbrr.oauthserv.types.{authorization, _}
 import org.http4s.Uri
 

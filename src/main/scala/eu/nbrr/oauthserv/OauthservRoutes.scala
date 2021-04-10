@@ -2,26 +2,24 @@ package eu.nbrr.oauthserv
 
 import cats.effect.Sync
 import cats.syntax.all._
-import eu.nbrr.oauthserv.ParamDecoders._
+import eu.nbrr.oauthserv.coders.ParamDecoders._
 import eu.nbrr.oauthserv.traits.{Authorizations, RegisteredClients, ResourceOwners, Tokens}
-import eu.nbrr.oauthserv.types.authorization.Code
-import eu.nbrr.oauthserv.types.client
+import eu.nbrr.oauthserv.types.AuthorizationCode
+import eu.nbrr.oauthserv.types.endpoints._
 import eu.nbrr.oauthserv.types.endpoints.authentication.{AuthenticationRequest, _}
 import eu.nbrr.oauthserv.types.endpoints.authorization.AuthorizationResponseTypeResponseError
+import eu.nbrr.oauthserv.types.endpoints.token.{TokenRequest, TokenResponseError}
 import org.http4s.FormDataDecoder.formEntityDecoder
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 
-
-// TODO put these somewhere it makes sense
-case class GrantType(value: String)
-
-case class TokenRequest(grantType: GrantType, code: Code, redirectUri: Uri, clientId: client.Id, clientSecret: client.Secret)
-
 // FIXME force https
 object OauthservRoutes {
-  def authorizationsRoutes[F[_] : Sync](implicit A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): HttpRoutes[F] = {
-    val _ = A
+  def authorizationsRoutes[F[_] : Sync](A: Authorizations, RO: ResourceOwners, RC: RegisteredClients, T: Tokens): HttpRoutes[F] = {
+    implicit val A_ = A
+    implicit val RO_ = RO
+    implicit val RC_ = RC
+    implicit val T_ = T
     val dsl = new Http4sDsl[F] {}
     import dsl._
 
@@ -56,25 +54,24 @@ object OauthservRoutes {
         } yield authenticationResponse
         case _ => (AuthenticationResponseTypeResponseError(responseType): AuthenticationResponse).pure[F]
       }).map(_.response[F]())
-
-      /*case req@POST -> Root / "token" => {
-              // FIXME write this in a cleaner manner. Use Either ?
-              // TODO proper client authentication
-              // TOOO some extent of brute-force protection
-              // TODO http basic authentication scheme
-              for {
-                // FIXME invalid_scope error & scope check somewhere
-                // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?
-                tokenRequest <- req.as[TokenRequest] // TODO invalid_request should occur is there is a failure here
-                tokenResult =
-                  if (tokenRequest.grantType.value == "authorization_code") {
-                    AuthorizationCodeGrant(tokenRequest)(A, RO, RC, T)
-                  } else {
-                    TokenResponseError(endpoints.token.UnsupportedGrantType(), None, None)
-                  }
-              } yield tokenResult.response[F]()
-              // HELP why slow to respond? esp on errors -> shouldn't infinite loop have been reported somehow?
+      case req@POST -> Root / "token" => {
+        // FIXME write this in a cleaner manner. Use Either ?
+        // TODO proper client authentication
+        // TOOO some extent of brute-force protection
+        // TODO http basic authentication scheme
+        for {
+          // FIXME invalid_scope error & scope check somewhere
+          // TODO invalid_grant error: spec also mentions resource owner credentials might be wrong at this point, why ?
+          tokenRequest <- req.as[TokenRequest] // TODO invalid_request should occur if there is a failure here
+          tokenResponse =
+            if (tokenRequest.grantType == AuthorizationCode()) {
+              endpoints.token.AuthorizationCodeGrant(tokenRequest)(A, RC, T)
+            } else {
+              TokenResponseError(token.InvalidGrant(), None, None)
             }
-          }*/
+        } yield tokenResponse.response[F]()
+        // HELP why slow to respond? esp on errors -> shouldn't infinite loop have been reported somehow?
+      }
     }
   }
+}

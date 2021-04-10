@@ -1,8 +1,10 @@
-package eu.nbrr.oauthserv
+package eu.nbrr.oauthserv.coders
 
-import cats.implicits.catsSyntaxTuple6Semigroupal
+import cats.implicits.{catsSyntaxTuple5Semigroupal, catsSyntaxTuple6Semigroupal}
+import eu.nbrr.oauthserv.types._
 import eu.nbrr.oauthserv.types.endpoints.authentication.AuthenticationRequest
-import eu.nbrr.oauthserv.types.{RoId, RoSecret, authorization, client}
+import eu.nbrr.oauthserv.types.endpoints.token.TokenRequest
+import eu.nbrr.oauthserv.types.resource_owner.{RoId, RoSecret}
 import org.http4s.FormDataDecoder.{field, fieldOptional}
 import org.http4s.dsl.io.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.http4s.{FormDataDecoder, QueryParamDecoder, Uri}
@@ -23,7 +25,7 @@ object ParamDecoders {
   implicit val authorizationCodeQueryParamDecoder: QueryParamDecoder[authorization.Code] =
     QueryParamDecoder[String].map(authorization.Code(_))
   implicit val grantTypeQueryParamDecoder: QueryParamDecoder[GrantType] =
-    QueryParamDecoder[String].map(GrantType)
+    QueryParamDecoder[String].map(GrantType.fromString(_))
 
   object ResponseTypeQueryParamMatcher extends QueryParamDecoderMatcher[String]("response_type")
 
@@ -42,11 +44,12 @@ object ParamDecoders {
       field[Uri]("redirect_uri"),
       fieldOptional[authorization.State]("state"),
       fieldOptional[client.Scope]("scope")).mapN(AuthenticationRequest)
-  /*  implicit val tokenRequestMapper: FormDataDecoder[TokenRequest] =
-      (field[GrantType]("grant_type"),
-        field[authorization.Code]("code"),
-        field[Uri]("redirect_uri"),
-        field[client.Id]("client_id"),
-        field[client.Secret]("client_secret")).mapN(TokenRequest)*/
+
+  implicit val tokenRequestMapper: FormDataDecoder[TokenRequest] =
+    (field[GrantType]("grant_type"),
+      field[authorization.Code]("code"),
+      field[Uri]("redirect_uri"),
+      field[client.Id]("client_id"),
+      field[client.Secret]("client_secret")).mapN(TokenRequest)
 
 }

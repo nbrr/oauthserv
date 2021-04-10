@@ -1,7 +1,7 @@
 package eu.nbrr.oauthserv.impls
 
 import eu.nbrr.oauthserv.traits.ResourceOwners
-import eu.nbrr.oauthserv.types.{ResourceOwner, RoId, RoName, RoSecret}
+import eu.nbrr.oauthserv.types.resource_owner.{ResourceOwner, RoId, RoName, RoSecret}
 
 import scala.collection.mutable.Set
 
