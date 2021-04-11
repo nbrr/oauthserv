@@ -5,7 +5,7 @@ import eu.nbrr.oauthserv.types.authorization.State
 import eu.nbrr.oauthserv.types.client.{Id, Scope}
 import org.http4s.Status.{BadRequest, Ok}
 import org.http4s.headers.`Content-Type`
-import org.http4s.{MediaType, Response, Uri}
+import org.http4s.{client => _, _}
 
 
 sealed trait AuthorizationResponse {
@@ -18,9 +18,8 @@ case class AuthorizationCodeGrantResponseSuccess(clientId: Id,
                                                  maybeScope: Option[Scope]) extends AuthorizationResponse {
   override def response[F[_]](): Response[F] =
     Response[F](status = Ok)
-      .withHeaders(`Content-Type`(MediaType.text.html))
-      .withEntity(htmlForm("code", clientId, redirectionUri, maybeState, maybeScope))
-
+    .withEntity(htmlForm("code", clientId, redirectionUri, maybeState, maybeScope))
+    .withContentType(`Content-Type`(MediaType.text.html))
   //  Response[F](status = Found).withHeaders(Location(
   //    authorization.redirectionUri
   //      .withQueryParam("code", authorization.code)
@@ -33,8 +32,8 @@ case class ImplicitGrantResponseSuccess(clientId: Id,
                                         maybeScope: Option[Scope]) extends AuthorizationResponse {
   override def response[F[_]](): Response[F] =
     Response[F](status = Ok)
-      .withHeaders(`Content-Type`(MediaType.text.html))
       .withEntity(htmlForm("token", clientId, redirectionUri, maybeState, maybeScope))
+      .withHeaders(`Content-Type`(MediaType.text.html))
 }
 
 
@@ -73,7 +72,7 @@ object htmlForm {
     val maybeScopeField = maybeScope.map(_.get().map(scopeElt =>
       "<input type='checkbox' name='scope' id='" + scopeElt + "' value='" + scopeElt + "' />" +
         "<label for='" + scopeElt + "'>" + scopeElt + "</label>"
-    ).mkString("")).getOrElse("")
+    ).mkString("")).map(s => "<fieldset>"+s+"</fieldset>").getOrElse("")
     "<html>" +
       "<body>" + // FIXME why is it generating quotes here
       "<form action='/authentication?response_type=" + responseType.toString + "' method='post' accept-charset='utf-8'>" +
