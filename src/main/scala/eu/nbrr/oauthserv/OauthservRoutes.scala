@@ -64,7 +64,8 @@ object OauthservRoutes {
           tokenResponse = tokenRequest match {
             case Some(eitherTokenRequest) => eitherTokenRequest match {
               case Right(req@AuthorizationCodeTokenRequest(_, _, _, _)) => endpoints.token.AuthorizationCodeGrant(req): TokenResponse
-              case Right(req@ResourceOwnerPasswordCredentialsTokenRequest(_, _, _)) => endpoints.token.ResourceOwnerPasswordCredentialsGrant(req): TokenResponse
+              case Right(req@ResourceOwnerPasswordCredentialsTokenRequest(_, _, _, _, _)) => endpoints.token.ResourceOwnerPasswordCredentialsGrant(req): TokenResponse
+              case Right(req@ClientCredentialsTokenRequest(_, _, _)) => endpoints.token.ClientCredentialsGrant(req): TokenResponse
               case Left(faultyGrantType) => TokenResponseError(UnsupportedGrantType(), Some("grant_type " + faultyGrantType + " not recognized"), None)
             }
             case None => TokenResponseError(token.InvalidRequest(), Some("grant_type missing"), None) // FIXME other parameters should be checked

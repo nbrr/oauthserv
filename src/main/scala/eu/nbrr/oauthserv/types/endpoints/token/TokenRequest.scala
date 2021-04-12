@@ -18,6 +18,13 @@ case class AuthorizationCodeTokenRequest
 case class ResourceOwnerPasswordCredentialsTokenRequest
 (username: RoId,
  password: RoSecret,
- scope: Option[Scope])
+ scope: Option[Scope],
+ clientId: client.Id,
+ clientSecret: client.Secret)
   extends TokenRequest
 
+case class ClientCredentialsTokenRequest
+(scope: Option[Scope],
+ clientId: client.Id,
+ clientSecret: client.Secret)
+  extends TokenRequest
