@@ -8,8 +8,8 @@ import java.time.Instant
 
 object AuthorizationCodeGrant {
   def apply
-  (req: TokenRequest)
-  (A: Authorizations, RC: RegisteredClients, T: Tokens): TokenResponse =
+  (req: AuthorizationCodeTokenRequest)
+  (implicit A: Authorizations, RC: RegisteredClients, T: Tokens): TokenResponse =
     RC.findById(req.clientId) match { // TODO client authentication for client
       case None => TokenResponseError(InvalidClient(), Some("client not found"), None)
       case Some(client) =>

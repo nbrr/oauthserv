@@ -61,3 +61,11 @@ are such that they do not raise errors.
 ##### Degenerate cases
 Missing parameters.
 Non valid value to parameter.
+
+### Resource Owner Password Credentials
+    curl -v -X POST \
+    --data-urlencode "grant_type=password"\
+    --data-urlencode "username=alice"\
+    --data-urlencode "password=Alice123"\
+    --data-urlencode "scope=ceci"\
+    "http://localhost:8080/token"

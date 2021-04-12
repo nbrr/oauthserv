@@ -17,6 +17,12 @@ case class AuthorizationCodeGrantResponseSuccess(token: Token) extends TokenResp
       .withEntity((this: TokenResponse).asJson)
 }
 
+case class ResourceOwnerPasswordCredentialsResponseSuccess(token: Token) extends TokenResponse {
+  override def response[F[_]](): Response[F] =
+    Response[F](status = Ok)
+      .withEntity((this: TokenResponse).asJson)
+}
+
 case class TokenResponseError(error: TokenErrorType, description: Option[String], uri: Option[Uri]) extends TokenResponse {
   override def response[F[_]](): Response[F] =
     Response[F](status = BadRequest)

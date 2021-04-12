@@ -31,10 +31,25 @@ object ParamEncoders {
   // FIXME omit None values
   implicit val encodeTokenResponse: Encoder[TokenResponse] = Encoder.instance {
     case trs@token.AuthorizationCodeGrantResponseSuccess(_) => trs.asJson
+    case trs@token.ResourceOwnerPasswordCredentialsResponseSuccess(_) => trs.asJson
     case tre@token.TokenResponseError(_, _, _) => tre.asJson
   }
 
-  implicit val encodeTokenResponseSuccess: Encoder[token.AuthorizationCodeGrantResponseSuccess] =
+  implicit val encodeAuthorizationCodeGrantResponseSuccess: Encoder[token.AuthorizationCodeGrantResponseSuccess] =
+    Encoder.forProduct4(
+      "access_token",
+      /*"token_type",*/
+      "expires_in",
+      "refresh_token",
+      "scope")(trs =>
+      (trs.token.accessToken.toString,
+        /*,*/
+        trs.token.validity.toString, // FIXME should be optional
+        trs.token.refreshToken.map(_.toString),
+        trs.token.scope.mkString(",") // FIXME should be optional
+      )) // FIXME time string format
+
+  implicit val encodeResourceOwnerPasswordCredentialsResponseSuccess: Encoder[token.ResourceOwnerPasswordCredentialsResponseSuccess] =
     Encoder.forProduct4(
       "access_token",
       /*"token_type",*/

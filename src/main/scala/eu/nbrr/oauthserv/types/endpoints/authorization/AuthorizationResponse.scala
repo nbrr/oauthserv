@@ -18,8 +18,8 @@ case class AuthorizationCodeGrantResponseSuccess(clientId: Id,
                                                  maybeScope: Option[Scope]) extends AuthorizationResponse {
   override def response[F[_]](): Response[F] =
     Response[F](status = Ok)
-    .withEntity(htmlForm("code", clientId, redirectionUri, maybeState, maybeScope))
-    .withContentType(`Content-Type`(MediaType.text.html))
+      .withEntity(htmlForm("code", clientId, redirectionUri, maybeState, maybeScope))
+      .withContentType(`Content-Type`(MediaType.text.html))
   //  Response[F](status = Found).withHeaders(Location(
   //    authorization.redirectionUri
   //      .withQueryParam("code", authorization.code)
@@ -72,7 +72,7 @@ object htmlForm {
     val maybeScopeField = maybeScope.map(_.get().map(scopeElt =>
       "<input type='checkbox' name='scope' id='" + scopeElt + "' value='" + scopeElt + "' />" +
         "<label for='" + scopeElt + "'>" + scopeElt + "</label>"
-    ).mkString("")).map(s => "<fieldset>"+s+"</fieldset>").getOrElse("")
+    ).mkString("")).map(s => "<fieldset>" + s + "</fieldset>").getOrElse("")
     "<html>" +
       "<body>" + // FIXME why is it generating quotes here
       "<form action='/authentication?response_type=" + responseType.toString + "' method='post' accept-charset='utf-8'>" +
